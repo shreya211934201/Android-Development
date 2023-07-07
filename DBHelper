@@ -1,0 +1,96 @@
+package com.example.sqldatabase
+
+import android.annotation.SuppressLint
+import android.content.ContentValues
+import android.content.Context
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+
+class DBHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VER) {
+
+    val users: String?
+        @SuppressLint("Range")
+        get() {
+
+            val usersList = mutableListOf<String>()
+            val db = this.readableDatabase
+            val cursor = db.rawQuery("SELECT * FROM users", null)
+
+            if (cursor.moveToFirst()) {
+                do {
+                    val userId = cursor.getString(cursor.getColumnIndex("id"))
+                    val userName = cursor.getString(cursor.getColumnIndex("name"))
+                    val userEmail = cursor.getString(cursor.getColumnIndex("email"))
+                    val userManu = cursor.getString(cursor.getColumnIndex("manu"))
+                    val userModel = cursor.getString(cursor.getColumnIndex("model"))
+                    usersList.add("ID: $userId, Name: $userName, Email: $userEmail, Manufacturer: $userManu, Model: $userModel")
+                } while (cursor.moveToNext())
+            }
+
+            cursor.close()
+            db.close()
+
+            return usersList.joinToString("\n")
+        }
+
+
+    companion object {
+        private const val DB_NAME = "users"
+        private const val DB_VER = 1
+    }
+
+    override fun onCreate(sqLiteDatabase: SQLiteDatabase) {
+        val query = "CREATE TABLE users(id VARCHAR(10) PRIMARY KEY, name TEXT, email TEXT, manu TEXT, model TEXT)"
+        sqLiteDatabase.execSQL(query)
+    }
+
+    override fun onUpgrade(sqLiteDatabase: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS users")
+        onCreate(sqLiteDatabase)
+    }
+
+    fun registerUser(
+        mobNo: String,
+        name: String,
+        email: String,
+        manu: String,
+        model: String,
+        toString: String,
+        toString1: String
+    ): Boolean {
+        val sqLiteDatabase = this.writableDatabase
+        val contentValues = ContentValues()
+        return try {
+            contentValues.put("id", mobNo)
+            contentValues.put("name", name)
+            contentValues.put("email", email)
+            contentValues.put("manu", manu)
+            contentValues.put("model", model)
+            sqLiteDatabase.insert("users", null, contentValues) > 0
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        } finally {
+            sqLiteDatabase.close()
+        }
+    }
+
+    fun deleteUser(id: String) {
+        val sqLiteDatabase = this.writableDatabase
+        sqLiteDatabase.delete("users", "id = ?", arrayOf(id))
+        sqLiteDatabase.close()
+    }
+
+    fun update(id: String, name: String, email: String, manu: String, model: String) {
+        val sqLiteDatabase = this.writableDatabase
+        val contentValues = ContentValues()
+        contentValues.put("id", id)
+        contentValues.put("name", name)
+        contentValues.put("email", email)
+        contentValues.put("manu", manu)
+        contentValues.put("model", model)
+        sqLiteDatabase.update("users", contentValues, "id = ?", arrayOf(id))
+        sqLiteDatabase.close()
+    }
+}
